@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 기반 표상체계 검사</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2.5rem;
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .header-subtitle {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        .section-container {
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 0.5rem;
+        }
+        .question-item {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+        .question-text {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .options-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .option-button {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid #d1d5db;
+            background-color: #e5e7eb;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-weight: 600;
+            color: #4b5563;
+        }
+        .option-button:hover {
+            background-color: #d1d5db;
+        }
+        .option-button.selected {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .submit-button {
+            width: 100%;
+            padding: 1rem;
+            margin-top: 2rem;
+            background-color: #10b981;
+            color: white;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            border: none;
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        .submit-button:hover {
+            background-color: #059669;
+        }
+        .result-section {
+            display: none;
+            margin-top: 2rem;
+        }
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .score-item {
+            flex-grow: 1;
+            text-align: center;
+        }
+        .score-item h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 150px;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            border-bottom: 1px solid #d1d5db;
+            padding-bottom: 0.5rem;
+        }
+        .bar {
+            width: 50px;
+            background-color: #2563eb;
+            transition: height 0.5s ease-in-out;
+            border-radius: 0.25rem 0.25rem 0 0;
+            position: relative;
+        }
+        .bar-label {
+            position: absolute;
+            top: -20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .feedback-section {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            background-color: #f1f5f9;
+            border: 1px solid #e5e7eb;
+        }
+        .feedback-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        .feedback-content {
+            line-height: 1.6;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 class="header-title">AI 기반 표상체계 검사</h1>
+        <p class="header-subtitle">당신이 세상을 경험하고 정보를 처리하는 방식을 알아보세요.</p>
+    </div>
+
+    <div id="test-form">
+        <div class="section-container">
+            <h2 class="section-title">시각 (Visual)</h2>
+            <div id="visual-questions"></div>
+        </div>
+
+        <div class="section-container">
+            <h2 class="section-title">청각 (Auditory)</h2>
+            <div id="auditory-questions"></div>
+        </div>
+
+        <div class="section-container">
+            <h2 class="section-title">운동감각 (Kinesthetic)</h2>
+            <div id="kinesthetic-questions"></div>
+        </div>
+
+        <button id="submit-button" class="submit-button">결과 확인하기</button>
+    </div>
+
+    <div id="result-section" class="result-section">
+        <h2 class="result-title">나의 표상체계 분석 결과</h2>
+        
+        <div class="score-container">
+            <div class="score-item">
+                <h3>시각</h3>
+                <div class="bar-chart">
+                    <div id="visual-bar" class="bar"></div>
+                </div>
+                <span id="visual-score">0점</span>
+            </div>
+            <div class="score-item">
+                <h3>청각</h3>
+                <div class="bar-chart">
+                    <div id="auditory-bar" class="bar"></div>
+                </div>
+                <span id="auditory-score">0점</span>
+            </div>
+            <div class="score-item">
+                <h3>운동감각</h3>
+                <div class="bar-chart">
+                    <div id="kinesthetic-bar" class="bar"></div>
+                </div>
+                <span id="kinesthetic-score">0점</span>
+            </div>
+        </div>
+        
+        <div class="feedback-section">
+            <h3 class="feedback-title" id="feedback-title"></h3>
+            <p class="feedback-content" id="feedback-content"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const questions = {
+            visual: [
+                "깔끔하고 정리 정돈을 잘합니까?",
+                "빠르게 말합니까?",
+                "장기 계획을 세웁니까?",
+                "철자를 틀리지 않고, 단어를 마음 속에 그릴 수 있습니까?",
+                "들은 것보다 본 것을 잘 기억하는 편입니까?",
+                "시각적 연상을 통해 기억합니까?",
+                "글이 아닌 말로 하는 강의를 기억하는 것에 어려움을 느끼고, 사람들에게 다시 말해달라고 부탁합니까?",
+                "듣는 것보다 읽는 것을 선호합니까?",
+                "전화할 때나 직원회의 때 메모를 합니까?",
+                "말로 설명하는 것보다 시범 보이는 것을 좋아합니까?",
+                "음악보다 미술을 좋아합니까?",
+                "말하고 싶은데 알맞은 단어가 생각나지 않을 때가 있습니까?"
+            ],
+            auditory: [
+                "일할 때 혼잣말을 합니까?",
+                "소음에 의해 쉽게 집중을 잃습니까?",
+                "읽을 때 입술을 움직이거나 단어를 말합니까?",
+                "크게 읽고 듣는 것을 즐깁니까?",
+                "따라하고 톤, 음색, 음을 흉내낼 수 있습니까?",
+                "쓰는 것보다 말하는 것이 쉽습니까?",
+                "리듬감 있게 말합니까?",
+                "달변가입니까?",
+                "미술보다 음악을 좋아합니까?",
+                "듣기를 통해 학습하고, 본 것보다 말한 것을 더 잘 기억합니까?",
+                "말하기, 토의를 좋아하거나 긴 묘사를 합니까?",
+                "쓰는 것보다 큰 소리로 철자를 잘 말할 수 있습니까?"
+            ],
+            kinesthetic: [
+                "천천히 말합니까?",
+                "사람들의 주의를 끌기 위해 접촉합니까?",
+                "누군가에게 말을 할 때 가까이 섭니까?",
+                "신체 지향적이고 많이 움직입니까?",
+                "조종하고 시행함으로써 학습합니까?",
+                "걷고 보는 것을 통해 기억합니까?",
+                "읽을 때 손으로 짚어가며 읽습니까?",
+                "제스처를 많이 사용합니까?",
+                "오랜 시간 앉아 있는 것에 어려움을 느낍니까?",
+                "느낌에 따라 결정을 내립니까?",
+                "들을 때 펜, 손가락 혹은 발을 두드립니까?",
+                "스포츠나 신체 활동으로 시간을 보냅니까?"
+            ]
+        };
+
+        const scores = { visual: 0, auditory: 0, kinesthetic: 0 };
+        const selectedOptions = {};
+
+        const createQuestionElements = (system, questionsList) => {
+            const container = document.getElementById(`${system}-questions`);
+            questionsList.forEach((questionText, index) => {
+                const questionItem = document.createElement('div');
+                questionItem.className = 'question-item';
+
+                const textEl = document.createElement('p');
+                textEl.className = 'question-text';
+                textEl.textContent = `${index + 1}. ${questionText}`;
+                questionItem.appendChild(textEl);
+
+                const optionsContainer = document.createElement('div');
+                optionsContainer.className = 'options-container';
+                
+                const options = [
+                    { label: '자주', value: 2 },
+                    { label: '가끔', value: 1 },
+                    { label: '드물게', value: 0 }
+                ];
+
+                options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'option-button';
+                    button.textContent = option.label;
+                    button.dataset.value = option.value;
+                    
+                    button.addEventListener('click', () => {
+                        // Deselect all buttons in this question item
+                        optionsContainer.querySelectorAll('.option-button').forEach(btn => {
+                            btn.classList.remove('selected');
+                        });
+                        // Select the clicked button
+                        button.classList.add('selected');
+                        selectedOptions[`${system}-${index}`] = option.value;
+                    });
+                    optionsContainer.appendChild(button);
+                });
+                questionItem.appendChild(optionsContainer);
+                container.appendChild(questionItem);
+            });
+        };
+
+        // Create UI for all questions
+        createQuestionElements('visual', questions.visual);
+        createQuestionElements('auditory', questions.auditory);
+        createQuestionElements('kinesthetic', questions.kinesthetic);
+
+        // Submit button functionality
+        document.getElementById('submit-button').addEventListener('click', () => {
+            // Check if all questions are answered
+            const totalQuestions = questions.visual.length + questions.auditory.length + questions.kinesthetic.length;
+            if (Object.keys(selectedOptions).length < totalQuestions) {
+                alert("모든 문항에 답해주세요!");
+                return;
+            }
+
+            // Calculate scores
+            scores.visual = 0;
+            scores.auditory = 0;
+            scores.kinesthetic = 0;
+
+            for (const key in selectedOptions) {
+                const [system, index] = key.split('-');
+                scores[system] += selectedOptions[key];
+            }
+
+            // Display results
+            document.getElementById('test-form').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+
+            const maxScore = 2 * 12; // 2 points * 12 questions
+            const visualHeight = (scores.visual / maxScore) * 100;
+            const auditoryHeight = (scores.auditory / maxScore) * 100;
+            const kinestheticHeight = (scores.kinesthetic / maxScore) * 100;
+
+            document.getElementById('visual-bar').style.height = `${visualHeight}%`;
+            document.getElementById('auditory-bar').style.height = `${auditoryHeight}%`;
+            document.getElementById('kinesthetic-bar').style.height = `${kinestheticHeight}%`;
+
+            document.getElementById('visual-score').textContent = `${scores.visual}점`;
+            document.getElementById('auditory-score').textContent = `${scores.auditory}점`;
+            document.getElementById('kinesthetic-score').textContent = `${scores.kinesthetic}점`;
+
+            // AI-based feedback
+            const maxScoreValue = Math.max(scores.visual, scores.auditory, scores.kinesthetic);
+            let dominantSystem = '';
+            let feedback = '';
+
+            if (scores.visual === maxScoreValue) {
+                dominantSystem = '시각 유형 (Visual)';
+                feedback = '당신은 세상을 주로 시각적으로 경험하고 이해하는 경향이 강합니다. 정보를 그림, 도표, 이미지로 보면 더 잘 기억하며, 깔끔한 시각적 환경에서 효율이 높아집니다. AI를 활용할 때도 이미지 생성 AI, 데이터 시각화 툴 등을 통해 사고를 확장해 보세요. 명확한 시각적 목표를 설정하는 것이 당신의 강점을 극대화하는 방법입니다.';
+            } else if (scores.auditory === maxScoreValue) {
+                dominantSystem = '청각 유형 (Auditory)';
+                feedback = '당신은 소리와 말을 통해 정보를 더 잘 처리하는 경향이 있습니다. 대화, 토론, 그리고 음성 메시지를 통해 학습하는 것이 효과적입니다. AI 기반 오디오북, 음성 합성 툴 등을 활용하여 정보를 습득하고, 팟캐스트나 음성으로 아이디어를 교환하는 방식으로 AI와 협업해 보세요. 소리를 통해 당신의 잠재력을 깨울 수 있습니다.';
+            } else if (scores.kinesthetic === maxScoreValue) {
+                dominantSystem = '운동감각 유형 (Kinesthetic)';
+                feedback = '당신은 몸의 움직임과 감각적인 느낌을 통해 정보를 배우고 기억하는 경향이 강합니다. 직접 체험하고, 몸을 움직여 활동하는 것이 가장 효과적인 학습 방법입니다. AI를 활용할 때는 가상현실(VR) 시뮬레이션, 체험형 콘텐츠 등을 통해 새로운 경험을 만들어 보세요. AI는 당신의 감각적 경험을 더욱 풍부하게 만들어주는 도구가 될 것입니다.';
+            } else {
+                dominantSystem = '균형 잡힌 유형';
+                feedback = '당신은 모든 표상체계를 골고루 활용하는 균형 잡힌 유형입니다. 이는 다양한 환경에 유연하게 적응하고, 여러 방식의 학습과 소통을 능숙하게 활용할 수 있는 강점이 됩니다. AI를 활용할 때도 특정 방식에 얽매이지 않고, 필요에 따라 다양한 툴을 자유롭게 결합하여 시너지를 창출할 수 있을 것입니다.';
+            }
+
+            document.getElementById('feedback-title').textContent = `${dominantSystem}입니다.`;
+            document.getElementById('feedback-content').textContent = feedback;
+        });
+    });
+</script>
+
+</body>
+</html>
